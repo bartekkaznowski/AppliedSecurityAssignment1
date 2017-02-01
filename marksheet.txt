@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [2.5] hours
+effort : [3.5] hours
 
 -------------------------------------------------------------------------------
 
@@ -45,9 +45,9 @@ generality, realism, or style of a solution.
 
 [X] Stage 2 : implement RSA     decryption                           ( 10%)
 
-[?] Stage 3 : implement ElGamal encryption                           ( 10%)
+[X] Stage 3 : implement ElGamal encryption                           ( 10%)
 
-[?] Stage 4 : implement ElGamal decryption                           ( 10%)
+[X] Stage 4 : implement ElGamal decryption                           ( 10%)
 
     Extra   : implement (and integrate) major optimisations
 [?]           - has a reasoned approach to pseudo-random generation  ( 10%)

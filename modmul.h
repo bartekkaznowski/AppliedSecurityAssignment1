@@ -35,9 +35,12 @@ typedef struct {
 } ElGamalEncryptionVariables;
 
 typedef struct {
-  mpz_t n;
-  mpz_t e;
-  mpz_t m;
+  mpz_t p;
+  mpz_t q;
+  mpz_t g;
+  mpz_t x;
+  mpz_t c1;
+  mpz_t c2;
 } ElGamalDecryptionVariables;
 
 

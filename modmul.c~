@@ -136,10 +136,9 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
 
   mpz_urandomm(r,r_state, ev.q);
   mpz_set_ui(r, 1ul);
-  mpz_powm_sec(c1, ev.g, r, ev.p);
-  mpz_powm_sec(c2, ev.h, r, ev.p);
-  mpz_mul(c2, c2, ev.m);
-  mpz_mod(c2, c2, ev.p);
+  //mpz_powm_sec(c1, ev.g, r, ev.p);
+  //mpz_powm_sec(c2, ev.h, r, ev.p);
+  //mpz_mul(c2, c2, ev.m);
 
   gmp_printf ("%ZX\n", c1);
   gmp_printf ("%ZX\n", c2);
@@ -193,20 +192,6 @@ void stage3() {
   mpz_clear(ev.m);
 }
 
-void elGamalDecrypt(ElGamalDecryptionVariables dv){
-  mpz_t m;
-  
-  mpz_init(m);
-  mpz_powm_sec(dv.c1, dv.c1, dv.x, dv.p);
-  mpz_invert(dv.c1, dv.c1, dv.p);
-  mpz_mul(m, dv.c2, dv.c1);
-  mpz_mod(m, m, dv.p);
-
-  gmp_printf ("%ZX\n", m);
-  mpz_clear(m);
-}
-
-
 /*
 Perform stage 4:
 
@@ -216,43 +201,9 @@ Perform stage 4:
 */
 
 void stage4() {
-  ElGamalDecryptionVariables dv;
-  
-  mpz_init(dv.p);
-  mpz_init(dv.q);
-  mpz_init(dv.g);
-  mpz_init(dv.x);
-  mpz_init(dv.c1);
-  mpz_init(dv.c2);
 
-  for (int i = 0; i < 10; i++){
-    if(1 != gmp_scanf("%ZX", dv.p)){
-      abort();
-    }
-    if(1 != gmp_scanf("%ZX", dv.q)){
-      abort();
-    }
-    if(1 != gmp_scanf("%ZX", dv.g)){
-      abort();
-    }
-    if(1 != gmp_scanf("%ZX", dv.x)){
-      abort();
-    }
-    if(1 != gmp_scanf("%ZX", dv.c1)){
-      abort();
-    }
-    if(1 != gmp_scanf("%ZX", dv.c2)){
-      abort();
-    }
-    elGamalDecrypt(dv);
-  }
+  // fill in this function with solution
 
-  mpz_clear(dv.p);
-  mpz_clear(dv.q);
-  mpz_clear(dv.g);
-  mpz_clear(dv.x);
-  mpz_clear(dv.c1);
-  mpz_clear(dv.c2);
 }
 
 /*
