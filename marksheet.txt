@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [...] hours
+effort : [2.5] hours
 
 -------------------------------------------------------------------------------
 
@@ -41,9 +41,9 @@ outside this list can warrant an increase/decrease in marks, with examples
 including hard to quantify features such as the efficiency, robustness, 
 generality, realism, or style of a solution.
 
-[?] Stage 1 : implement RSA     encryption                           ( 10%)
+[X] Stage 1 : implement RSA     encryption                           ( 10%)
 
-[?] Stage 2 : implement RSA     decryption                           ( 10%)
+[X] Stage 2 : implement RSA     decryption                           ( 10%)
 
 [?] Stage 3 : implement ElGamal encryption                           ( 10%)
 
