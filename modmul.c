@@ -57,10 +57,12 @@ void rsaDecrypt(RSADecryptionVariables dv){
   // using mpz_powm_sec instead of mpz_powm for security reasons (side-channel attack)
 //  mpz_powm_sec(m, dv.c, dv.d, dv.n);
   mpz_powm_sec(m1, dv.c, dv.d_p, dv.p);
-  mpz_powm_sec(m2, dv.c, dv.d_p, dv.q);
+  mpz_powm_sec(m2, dv.c, dv.d_q, dv.q);
   mpz_sub(h, m1, m2);
   mpz_mul(h, h, dv.i_q);
   mpz_mod(h, h, dv.p);
+  mpz_mul(h, h, dv.q);
+  mpz_add(m, m2, h);
   gmp_printf ("%ZX\n", m);
   mpz_clear(m);
   mpz_clear(m1);
