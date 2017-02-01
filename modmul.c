@@ -46,13 +46,26 @@ void stage1() {
 
 void rsaDecrypt(RSADecryptionVariables dv){
   mpz_t m;
+  mpz_t m1;
+  mpz_t m2;
+  mpz_t h;
   mpz_init(m);
+  mpz_init(m1);
+  mpz_init(m2);
+  mpz_init(h);
 
   // using mpz_powm_sec instead of mpz_powm for security reasons (side-channel attack)
-  mpz_powm_sec(m, dv.c, dv.d, dv.n);
-
+//  mpz_powm_sec(m, dv.c, dv.d, dv.n);
+  mpz_powm_sec(m1, dv.c, dv.d_p, dv.p);
+  mpz_powm_sec(m2, dv.c, dv.d_p, dv.q);
+  mpz_sub(h, m1, m2);
+  mpz_mul(h, h, dv.i_q);
+  mpz_mod(h, h, dv.p);
   gmp_printf ("%ZX\n", m);
   mpz_clear(m);
+  mpz_clear(m1);
+  mpz_clear(m2);
+  mpz_clear(h);
 }
 
 /*
