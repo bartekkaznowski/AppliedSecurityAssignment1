@@ -1,5 +1,5 @@
 #include "modmul.h"
-
+#include "gmp_ext.h"
 
 void rsaEncrypt(RSAEncryptionVariables ev){
   mpz_t c;
@@ -38,7 +38,7 @@ void stage1() {
     }
     rsaEncrypt(ev);
   }
-  
+
   mpz_clear(ev.n);
   mpz_clear(ev.e);
   mpz_clear(ev.m);
@@ -120,7 +120,7 @@ void stage2() {
     }
     rsaDecrypt(dv);
   }
-  
+
   mpz_clear(dv.n);
   mpz_clear(dv.d);
   mpz_clear(dv.p);
@@ -137,11 +137,11 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   mpz_t c1;
   mpz_t c2;
   mpz_t r;
-  
+
   mpz_init(c1);
   mpz_init(c2);
   mpz_init(r);
-  
+
   unsigned long int seed = 123456;
 
   gmp_randstate_t r_state;
@@ -175,7 +175,7 @@ Perform stage 3:
 
 void stage3() {
   ElGamalEncryptionVariables ev;
-  
+
   mpz_init(ev.p);
   mpz_init(ev.q);
   mpz_init(ev.g);
@@ -210,7 +210,7 @@ void stage3() {
 
 void elGamalDecrypt(ElGamalDecryptionVariables dv){
   mpz_t m;
-  
+
   mpz_init(m);
   mpz_powm_sec(dv.c1, dv.c1, dv.x, dv.p);
   mpz_invert(dv.c1, dv.c1, dv.p);
@@ -232,7 +232,7 @@ Perform stage 4:
 
 void stage4() {
   ElGamalDecryptionVariables dv;
-  
+
   mpz_init(dv.p);
   mpz_init(dv.q);
   mpz_init(dv.g);
@@ -276,7 +276,26 @@ the correct function for the requested stage.
 */
 
 int main( int argc, char* argv[] ) {
-  if( 2 != argc ) {
+  if( 2 != argc ) { // TODO Remove this upto abort
+    mpz_t r;
+    mpz_init(r);
+    mpz_set_ui(r, 0ul);
+
+    mpz_t t;
+    mpz_init(t);
+    mpz_set_ui(t, 6ul);
+
+    mpz_t m;
+    mpz_init(m);
+    mpz_set_ui(m, 2ul);
+
+    slidingWindow(r, t, t, m, 8);
+    gmp_printf ("%Zd\n", r);
+//    printf("int = %i\n", createInt(t, 1, 0));
+    mpz_clear(m);
+    mpz_clear(t);
+    mpz_clear(r);
+    return 0;
     abort();
   }
 
