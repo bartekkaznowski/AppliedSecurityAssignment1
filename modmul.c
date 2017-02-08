@@ -277,24 +277,37 @@ the correct function for the requested stage.
 
 int main( int argc, char* argv[] ) {
   if( 2 != argc ) { // TODO Remove this upto abort
-    mpz_t r;
-    mpz_init(r);
-    mpz_set_ui(r, 0ul);
+  mpz_t rho, omega, a, b, a_m, b_m, c, c_m, m, base, one;
+  mpz_init(rho);
+  mpz_init(omega);
+  mpz_init(a);
+  mpz_init(b);
+  mpz_init(c);
+  mpz_init(a_m);
+  mpz_init(b_m);
+  mpz_init(c_m);
+  mpz_init(m);
+  mpz_init(base);
+  mpz_init(one);
+  mpz_set_ui(one, 1ul);
+  mpz_set_ui(base, 2ul);
+  mpz_set_ui(a, 2ul);
+  mpz_set_ui(b, 2ul);
+  mpz_pow_ui(base, base, mp_bits_per_limb); // TODO move?
 
-    mpz_t t;
-    mpz_init(t);
-    mpz_set_ui(t, 6ul);
-
-    mpz_t m;
-    mpz_init(m);
-    mpz_set_ui(m, 2ul);
-
-    slidingWindow(r, t, t, m, 8);
-    gmp_printf ("%Zd\n", r);
-//    printf("int = %i\n", createInt(t, 1, 0));
-    mpz_clear(m);
-    mpz_clear(t);
-    mpz_clear(r);
+  mpz_set_ui(m, 11ul);
+  // precompute omega and rho
+  mpz_mont_rho_sq( rho, m );
+  gmp_printf ("rho = %Zd\n", rho);
+  mpz_mont_omega( omega, m, base );
+  gmp_printf ("omega = %Zd\n", omega);
+  // get x and y in Montgomery
+  mpz_mont_mul( a_m, a, rho, m);
+  gmp_printf ("a_m = %Zd\n", a_m);
+  mpz_mont_mul( b_m, b, rho, m);
+  mpz_mont_mul( c_m, a_m, b_m, m);
+  mpz_mont_mul( c, c_m, one, m);
+  gmp_printf ("%Zd\n", c);
     return 0;
     abort();
   }
