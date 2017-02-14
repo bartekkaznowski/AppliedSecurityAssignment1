@@ -5,11 +5,34 @@ void rsaEncrypt(RSAEncryptionVariables ev){
   mpz_t c;
   mpz_init(c);
 
-  // using mpz_powm_sec instead of mpz_powm for security reasons (side-channel attack)
-  mpz_powm_sec(c, ev.m, ev.e, ev.n);
+  mpz_t omega, rho, b, m_m, c_m, one;
+  mpz_init(omega);
+  mpz_init(rho);
+  mpz_init(b);
+  mpz_init(m_m);
+  mpz_init(c_m);
+  mpz_init(one);
+
+  mpz_set_ui(one, 1ul);
+  mpz_set_ui(b, 1ul);
+  mpz_mul_2exp(b, b, mp_bits_per_limb);
+
+  mpz_mont_omega(omega, ev.n, b);
+  mpz_mont_rho_sq(rho, ev.n);
+  mpz_mont_mul(m_m, ev.m, rho, ev.n, omega);
+
+  mpz_sw_m(c_m, m_m, ev.e, ev.n, 4, omega, rho);
+
+  mpz_mont_mul(c, c_m, one, ev.n, omega);
 
   gmp_printf ("%ZX\n", c);
   mpz_clear(c);
+  mpz_clear(c_m);
+  mpz_clear(m_m);
+  mpz_clear(omega);
+  mpz_clear(one);
+  mpz_clear(rho);
+  mpz_clear(b);
 }
 
 /*
@@ -54,15 +77,21 @@ void rsaDecrypt(RSADecryptionVariables dv){
   mpz_init(m2);
   mpz_init(h);
 
-  // using mpz_powm_sec instead of mpz_powm for security reasons (side-channel attack)
-//  mpz_powm_sec(m, dv.c, dv.d, dv.n);
-  mpz_powm_sec(m1, dv.c, dv.d_p, dv.p);
-  mpz_powm_sec(m2, dv.c, dv.d_q, dv.q);
-  mpz_sub(h, m1, m2);
-  mpz_mul(h, h, dv.i_q);
-  mpz_mod(h, h, dv.p);
-  mpz_mul(h, h, dv.q);
-  mpz_add(m, m2, h);
+  mpz_sw_nm(m1, dv.c, dv.d_p, dv.p, 4);
+  mpz_sw_nm(m2, dv.c, dv.d_q, dv.q, 4);
+  if (mpz_cmp(m1, m2) >= 0) { //  op0 > op1
+    mpz_sub(m, m1, m2);
+    mpz_mul( m, m, dv.i_q);
+    mpz_mod( m, m, dv.p);
+    mpz_mul( m, m, dv.q);
+    mpz_add( m, m, m2);
+  } else { // comparison < 0 | op0 < op1
+    mpz_sub (m, m2, m1);
+    mpz_mul ( m, m, dv.i_p);
+    mpz_mod ( m, m, dv.q);
+    mpz_mul ( m, m, dv.p);
+    mpz_add( m, m, m1);
+  }
   gmp_printf ("%ZX\n", m);
   mpz_clear(m);
   mpz_clear(m1);
@@ -137,11 +166,28 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   mpz_t c1;
   mpz_t c2;
   mpz_t r;
+  mpz_t p_m, q_m, g_m, h_m, m_m, b, c1_m, c2_m, one, omega, rho;
+
+  mpz_init(one);
+  mpz_set_ui(one, 1ul);
 
   mpz_init(c1);
   mpz_init(c2);
+  mpz_init(c1_m);
+  mpz_init(c2_m);
   mpz_init(r);
+  mpz_init(p_m);
+  mpz_init(q_m);
+  mpz_init(g_m);
+  mpz_init(h_m);
+  mpz_init(m_m);
+  mpz_init(b);
+  mpz_init(omega);
+  mpz_init(rho);
 
+  mpz_set_ui(b, 1ul);
+  mpz_mul_2exp (b, b, mp_bits_per_limb);
+  // start random
   unsigned long int seed = 123456;
 
   gmp_randstate_t r_state;
@@ -150,11 +196,21 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   gmp_randseed_ui(r_state, seed);
 
   mpz_urandomm(r,r_state, ev.q);
+
   mpz_set_ui(r, 1ul);
-  mpz_powm_sec(c1, ev.g, r, ev.p);
-  mpz_powm_sec(c2, ev.h, r, ev.p);
-  mpz_mul(c2, c2, ev.m);
-  mpz_mod(c2, c2, ev.p);
+  //end random
+
+  mpz_mont_rho_sq(rho, ev.p);
+  mpz_mont_omega(omega, ev.p, b);
+  mpz_mont_mul(g_m, ev.g, rho, ev.p, omega);
+  mpz_mont_mul(h_m, ev.h, rho, ev.p, omega);
+  mpz_mont_mul(m_m, ev.m, rho, ev.p, omega);
+
+  mpz_sw_m(c1_m, g_m, r, ev.p, 4, omega, rho);
+  mpz_sw_m(c2_m, h_m, r, ev.p, 4, omega, rho);
+  mpz_mont_mul(c1, c1_m, one, ev.p, omega);
+  mpz_mont_mul(c1_m, c2_m, m_m, ev.p, omega); // CAUTION: Resuing c1_m as a temp var
+  mpz_mont_mul(c2, c1_m, one, ev.p, omega); // CAUTION: Resuing c1_m as a temp var
 
   gmp_printf ("%ZX\n", c1);
   gmp_printf ("%ZX\n", c2);
@@ -163,6 +219,17 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   mpz_clear(r);
   mpz_clear(c1);
   mpz_clear(c2);
+  mpz_clear(c1_m);
+  mpz_clear(c2_m);
+  mpz_clear(g_m);
+  mpz_clear(h_m);
+  mpz_clear(m_m);
+  mpz_clear(one);
+  mpz_clear(omega);
+  mpz_clear(rho);
+  mpz_clear(p_m);
+  mpz_clear(q_m);
+  mpz_clear(b);
 }
 
 /*
@@ -209,16 +276,45 @@ void stage3() {
 }
 
 void elGamalDecrypt(ElGamalDecryptionVariables dv){
-  mpz_t m;
-
+  mpz_t m, omega, rho, b, c1_m, c2_m, e, m_m, temp, one;
   mpz_init(m);
-  mpz_powm_sec(dv.c1, dv.c1, dv.x, dv.p);
-  mpz_invert(dv.c1, dv.c1, dv.p);
-  mpz_mul(m, dv.c2, dv.c1);
-  mpz_mod(m, m, dv.p);
+  mpz_init(omega);
+  mpz_init(rho);
+  mpz_init(c1_m);
+  mpz_init(c2_m);
+  mpz_init(e);
+  mpz_init(m_m);
+  mpz_init(temp);
+  mpz_init(one);
+  mpz_init(b);
+  mpz_set_ui(one, 1ul);
+  mpz_set_ui(b, 1ul);
+  mpz_mul_2exp (b, b, mp_bits_per_limb);
+
+  mpz_mont_rho_sq(rho, dv.p);
+  mpz_mont_omega(omega, dv.p, b);
+  mpz_mont_mul(c1_m, dv.c1, rho, dv.p, omega);
+  mpz_mont_mul(c2_m, dv.c2, rho, dv.p, omega);
+
+  mpz_sub_ui(e, dv.p, 1ul);
+  mpz_sub(e, e, dv.x);
+
+  mpz_sw_m(temp, c1_m, e, dv.p, 4, omega, rho);
+
+  mpz_mont_mul(m_m, temp, c2_m, dv.p, omega);
+  mpz_mont_mul(m, m_m, one, dv.p, omega);
 
   gmp_printf ("%ZX\n", m);
   mpz_clear(m);
+  mpz_clear(omega);
+  mpz_clear(rho);
+  mpz_clear(c1_m);
+  mpz_clear(c2_m);
+  mpz_clear(e);
+  mpz_clear(m_m);
+  mpz_clear(temp);
+  mpz_clear(one);
+  mpz_clear(b);
 }
 
 
@@ -277,38 +373,6 @@ the correct function for the requested stage.
 
 int main( int argc, char* argv[] ) {
   if( 2 != argc ) { // TODO Remove this upto abort
-  mpz_t rho, omega, a, b, a_m, b_m, c, c_m, m, base, one;
-  mpz_init(rho);
-  mpz_init(omega);
-  mpz_init(a);
-  mpz_init(b);
-  mpz_init(c);
-  mpz_init(a_m);
-  mpz_init(b_m);
-  mpz_init(c_m);
-  mpz_init(m);
-  mpz_init(base);
-  mpz_init(one);
-  mpz_set_ui(one, 1ul);
-  mpz_set_ui(base, 2ul);
-  mpz_set_ui(a, 2ul);
-  mpz_set_ui(b, 2ul);
-  mpz_pow_ui(base, base, mp_bits_per_limb); // TODO move?
-
-  mpz_set_ui(m, 11ul);
-  // precompute omega and rho
-  mpz_mont_rho_sq( rho, m );
-  gmp_printf ("rho = %Zd\n", rho);
-  mpz_mont_omega( omega, m, base );
-  gmp_printf ("omega = %Zd\n", omega);
-  // get x and y in Montgomery
-  mpz_mont_mul( a_m, a, rho, m);
-  gmp_printf ("a_m = %Zd\n", a_m);
-  mpz_mont_mul( b_m, b, rho, m);
-  mpz_mont_mul( c_m, a_m, b_m, m);
-  mpz_mont_mul( c, c_m, one, m);
-  gmp_printf ("%Zd\n", c);
-    return 0;
     abort();
   }
 
