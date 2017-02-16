@@ -28,7 +28,9 @@ by the assignment description of course).  Let us know what third-party
 source code or resources you used (if any) so it's clear what's your work 
 and what isn't:
 
-[...]
+[
+https://github.com/sweis/librdrand/ - for rdrand.h, librdrand.a and config.h
+]
 
 -------------------------------------------------------------------------------
 
@@ -66,6 +68,12 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[...]
+[
+The random number generator is implemented using the OpenSSL rand.h
+library. It is seeded with entropy from the rdrdand instruction feature of
+Intel processors.
+Since the library is provided in binary format, the code will only run on
+64-bit linux machines.
+]
 
 -------------------------------------------------------------------------------

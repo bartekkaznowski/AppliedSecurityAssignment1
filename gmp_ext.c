@@ -1,26 +1,25 @@
 #include "gmp_ext.h"
 
-unsigned char getKthBit(mpz_t n, unsigned long k){
+unsigned char getKthBit(mpz_t n, unsigned long k) {
   if (n->_mp_size == 0) {
     return 0;
   };
-  unsigned long pos = k/(sizeof(mp_limb_t) * 8);
+  unsigned long pos = k / (sizeof(mp_limb_t) * 8);
 
   return ((n->_mp_d[pos] >> (k % (sizeof(mp_limb_t) * 8))) & 0x01);
 }
 
-unsigned createMask(unsigned a, unsigned b)
-{
-   unsigned r = 0;
-   for (unsigned i=a; i<=b; i++)
-       r |= 1 << i;
+unsigned createMask(unsigned a, unsigned b) {
+  unsigned r = 0;
+  for (unsigned i = a; i <= b; i++)
+    r |= 1 << i;
 
-   return r;
+  return r;
 }
 
-int createInt(mpz_t y, int i, int l){
+int createInt(mpz_t y, int i, int l) {
   int r = 0;
-  for (; i>=l; i--){
+  for (; i >= l; i--) {
     if (getKthBit(y, i) == 1) {
       r = r | 0x01;
     }
@@ -31,8 +30,8 @@ int createInt(mpz_t y, int i, int l){
   return r;
 }
 
-void mpz_sw_nm(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k){
-  unsigned long precomputedSize = (1ul << k)/2;
+void mpz_sw_nm(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k) {
+  unsigned long precomputedSize = (1ul << k) / 2;
   mpz_t T[precomputedSize];
 
   mpz_t xSquared;
@@ -42,9 +41,9 @@ void mpz_sw_nm(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k){
 
   mpz_init(T[0]);
   mpz_set(T[0], x);
-  for (int i = 1; i < precomputedSize; i++){
+  for (int i = 1; i < precomputedSize; i++) {
     mpz_init(T[i]);
-    mpz_mul(T[i], T[i-1], xSquared);
+    mpz_mul(T[i], T[i - 1], xSquared);
     mpz_mod(T[i], T[i], mod);
   }
 
@@ -53,14 +52,14 @@ void mpz_sw_nm(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k){
   int l = 0;
   int u = 0;
   int i = abs(y->_mp_size) * sizeof(mp_limb_t) * 8;
-  while(i >= 0){
-    if (getKthBit(y, i) == 0){
+  while (i >= 0) {
+    if (getKthBit(y, i) == 0) {
       l = i;
       u = 0;
     } else {
       l = i - k + 1;
-      l = (l > 0)?(l):(0);
-      while(getKthBit(y, l) == 0){
+      l = (l > 0) ? (l) : (0);
+      while (getKthBit(y, l) == 0) {
         l = l + 1;
       }
       u = createInt(y, i, l);
@@ -69,19 +68,19 @@ void mpz_sw_nm(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k){
     powerToAdd = powerToAdd << (i - l + 1);
     mpz_powm_ui(r, r, powerToAdd, mod);
     if (u != 0) {
-      mpz_mul(r, r, T[(int)floor(((u-1)/2))]);
+      mpz_mul(r, r, T[(int) floor(((u - 1) / 2))]);
       mpz_mod(r, r, mod);
     }
     i = l - 1;
   }
-  for (int i = 0; i < precomputedSize; i++){
+  for (int i = 0; i < precomputedSize; i++) {
     mpz_clear(T[i]);
   }
   mpz_clear(xSquared);
 }
 
-void mpz_sw_m(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k, mpz_t omega, mpz_t rho){
-  unsigned long precomputedSize = (1ul << k)/2;
+void mpz_sw_m(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k, mpz_t omega, mpz_t rho) {
+  unsigned long precomputedSize = (1ul << k) / 2;
   mpz_t T[precomputedSize];
 
   mpz_t xSquared, temp, one;
@@ -90,13 +89,13 @@ void mpz_sw_m(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k, mpz_t omega, mpz_t rh
   mpz_init(one);
   mpz_set_ui(one, 1ul);
 
-  mpz_mont_mul (xSquared, x, x, mod, omega);
+  mpz_mont_mul(xSquared, x, x, mod, omega);
 
   mpz_init(T[0]);
   mpz_set(T[0], x);
-  for (int i = 1; i < precomputedSize; i++){
+  for (int i = 1; i < precomputedSize; i++) {
     mpz_init(T[i]);
-    mpz_mont_mul (T[i], T[i-1], xSquared, mod, omega);
+    mpz_mont_mul(T[i], T[i - 1], xSquared, mod, omega);
   }
 
   mpz_mont_mul(r, one, rho, mod, omega);
@@ -104,30 +103,30 @@ void mpz_sw_m(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k, mpz_t omega, mpz_t rh
   int l = 0;
   int u = 0;
   int i = abs(y->_mp_size) * sizeof(mp_limb_t) * 8 - 1;
-  while(i >= 0){
-    if (getKthBit(y, i) == 0){
+  while (i >= 0) {
+    if (getKthBit(y, i) == 0) {
       l = i;
       u = 0;
     } else {
       l = i - k + 1;
-      l = (l > 0)?(l):(0);
-      while(getKthBit(y, l) == 0){
+      l = (l > 0) ? (l) : (0);
+      while (getKthBit(y, l) == 0) {
         l = l + 1;
       }
-      u = createInt(y, i, l); // TODO rework with memcpy
+      u = createInt(y, i, l);
     }
-    for ( int n = 0; n < i-l+1; ++n ) {
+    for (int n = 0; n < i - l + 1; ++n) {
       mpz_mont_mul(temp, r, r, mod, omega);
       mpz_set(r, temp);
     }
 
-    if ( u != 0 ) {
-      mpz_mont_mul(temp, r, T[(u-1)/2], mod, omega);
+    if (u != 0) {
+      mpz_mont_mul(temp, r, T[(u - 1) / 2], mod, omega);
       mpz_set(r, temp);
     }
     i = l - 1;
   }
-  for (int i = 0; i < precomputedSize; i++){
+  for (int i = 0; i < precomputedSize; i++) {
     mpz_clear(T[i]);
   }
   mpz_clear(xSquared);
@@ -135,9 +134,9 @@ void mpz_sw_m(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, int k, mpz_t omega, mpz_t rh
   mpz_clear(one);
 }
 
-void mpz_mont_omega(mpz_t r, mpz_t mod, mpz_t b){
+void mpz_mont_omega(mpz_t r, mpz_t mod, mpz_t b) {
   mpz_set_ui(r, 1);
-  for (int i = 1; i <= mp_bits_per_limb-1; i++){
+  for (int i = 1; i <= mp_bits_per_limb - 1; i++) {
     mpz_mul(r, r, r);
     mpz_mod(r, r, b);
     mpz_mul(r, r, mod);
@@ -147,15 +146,15 @@ void mpz_mont_omega(mpz_t r, mpz_t mod, mpz_t b){
   mpz_mod(r, r, b);
 }
 
-void mpz_mont_rho_sq(mpz_t r, mpz_t mod){
+void mpz_mont_rho_sq(mpz_t r, mpz_t mod) {
   mpz_set_ui(r, 1);
-  for (long int i = 1; i <= 2 * mpz_size(r) * mp_bits_per_limb; i++){
+  for (long int i = 1; i <= 2 * mpz_size(r) * mp_bits_per_limb; i++) {
     mpz_add(r, r, r);
     mpz_mod(r, r, mod);
   }
 }
 
-void mpz_mont_mul(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, mpz_t omega){
+void mpz_mont_mul(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, mpz_t omega) {
   mpz_set_ui(r, 0ul);
 
   mpz_t u, b, temp1, temp2;
@@ -166,9 +165,9 @@ void mpz_mont_mul(mpz_t r, mpz_t x, mpz_t y, mpz_t mod, mpz_t omega){
   mpz_init(temp2);
 
   mpz_set_ui(b, 1ul);
-  mpz_mul_2exp (b, b, mp_bits_per_limb);
+  mpz_mul_2exp(b, b, mp_bits_per_limb);
 
-  for (int i = 0; i <= mpz_size(mod) - 1; i++){
+  for (int i = 0; i <= mpz_size(mod) - 1; i++) {
     if (i < y->_mp_size) {
       mpz_set_ui(u, y->_mp_d[i]);
     } else {

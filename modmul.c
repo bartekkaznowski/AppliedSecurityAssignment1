@@ -3,12 +3,11 @@
 #include <openssl/rand.h>
 #include "rdrand.h"
 
-
-int getSeed ( unsigned int bytes, unsigned char *randomBinStr ) {
-  return rdrand_get_bytes( bytes, randomBinStr );
+int getSeed(unsigned int bytes, unsigned char * randomBinStr) {
+  return rdrand_get_bytes(bytes, randomBinStr);
 }
 
-void rsaEncrypt(RSAEncryptionVariables ev){
+void rsaEncrypt(RSAEncryptionVariables ev) {
   mpz_t c;
   mpz_init(c);
 
@@ -32,7 +31,7 @@ void rsaEncrypt(RSAEncryptionVariables ev){
 
   mpz_mont_mul(c, c_m, one, ev.n, omega);
 
-  gmp_printf ("%ZX\n", c);
+  gmp_printf("%ZX\n", c);
   mpz_clear(c);
   mpz_clear(c_m);
   mpz_clear(m_m);
@@ -56,17 +55,51 @@ void stage1() {
   mpz_init(ev.e);
   mpz_init(ev.m);
 
-  for (int i = 0; i < 10; i++){
-    if(1 != gmp_scanf("%ZX", ev.n)){
+  char buffer[1024];
+  size_t contentSize = 1;
+  char * content = malloc(sizeof(char) * 1024);
+  if (content == NULL) {
+    fprintf(stderr, "Failed to allocated memory.\n");
+    exit(1);
+  }
+  content[0] = '\0';
+  while (fgets(buffer, 1024, stdin)) {
+    contentSize += strlen(buffer);
+    content = realloc(content, contentSize);
+    if (content == NULL) {
+      fprintf(stderr, "Failed to allocated memory.\n");
+      free(content);
+      exit(1);
+    }
+    strcat(content, buffer);
+  }
+
+  if (ferror(stdin)) {
+    free(content);
+    fprintf(stderr, "Error reading stdin.\n");
+    exit(1);
+  }
+
+  char * num;
+  num = strtok(content, "\n");
+  while (num != NULL) {
+    mpz_set_str(ev.n, num, 16);
+
+    num = strtok(NULL, "\n");
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", ev.e)){
+    mpz_set_str(ev.e, num, 16);
+
+    num = strtok(NULL, "\n");
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", ev.m)){
-      abort();
-    }
+    mpz_set_str(ev.m, num, 16);
+
+    num = strtok(NULL, "\n");
     rsaEncrypt(ev);
+
   }
 
   mpz_clear(ev.n);
@@ -74,7 +107,7 @@ void stage1() {
   mpz_clear(ev.m);
 }
 
-void rsaDecrypt(RSADecryptionVariables dv){
+void rsaDecrypt(RSADecryptionVariables dv) {
   mpz_t m;
   mpz_t m1;
   mpz_t m2;
@@ -86,20 +119,20 @@ void rsaDecrypt(RSADecryptionVariables dv){
 
   mpz_sw_nm(m1, dv.c, dv.d_p, dv.p, 4);
   mpz_sw_nm(m2, dv.c, dv.d_q, dv.q, 4);
-  if (mpz_cmp(m1, m2) >= 0) { //  op0 > op1
+  if (mpz_cmp(m1, m2) >= 0) {
     mpz_sub(m, m1, m2);
-    mpz_mul( m, m, dv.i_q);
-    mpz_mod( m, m, dv.p);
-    mpz_mul( m, m, dv.q);
-    mpz_add( m, m, m2);
-  } else { // comparison < 0 | op0 < op1
-    mpz_sub (m, m2, m1);
-    mpz_mul ( m, m, dv.i_p);
-    mpz_mod ( m, m, dv.q);
-    mpz_mul ( m, m, dv.p);
-    mpz_add( m, m, m1);
+    mpz_mul(m, m, dv.i_q);
+    mpz_mod(m, m, dv.p);
+    mpz_mul(m, m, dv.q);
+    mpz_add(m, m, m2);
+  } else {
+    mpz_sub(m, m2, m1);
+    mpz_mul(m, m, dv.i_p);
+    mpz_mod(m, m, dv.q);
+    mpz_mul(m, m, dv.p);
+    mpz_add(m, m, m1);
   }
-  gmp_printf ("%ZX\n", m);
+  gmp_printf("%ZX\n", m);
   mpz_clear(m);
   mpz_clear(m1);
   mpz_clear(m2);
@@ -126,34 +159,85 @@ void stage2() {
   mpz_init(dv.i_q);
   mpz_init(dv.c);
 
-  for (int i = 0; i < 10; i++){
-    if(1 != gmp_scanf("%ZX", dv.n)){
+  char buffer[1024];
+  size_t contentSize = 1;
+  char * content = malloc(sizeof(char) * 1024);
+  if (content == NULL) {
+    fprintf(stderr, "Failed to allocated memory.\n");
+    exit(1);
+  }
+  content[0] = '\0';
+  while (fgets(buffer, 1024, stdin)) {
+    contentSize += strlen(buffer);
+    content = realloc(content, contentSize);
+    if (content == NULL) {
+      fprintf(stderr, "Failed to allocated memory.\n");
+      free(content);
+      exit(1);
+    }
+    strcat(content, buffer);
+  }
+
+  if (ferror(stdin)) {
+    free(content);
+    fprintf(stderr, "Error reading stdin.\n");
+    exit(1);
+  }
+
+  char * num;
+  num = strtok(content, "\n");
+  while (num != NULL) {
+    mpz_set_str(dv.n, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.d)){
+    mpz_set_str(dv.d, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.p)){
+    mpz_set_str(dv.p, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.q)){
+    mpz_set_str(dv.q, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.d_p)){
+    mpz_set_str(dv.d_p, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.d_q)){
+    mpz_set_str(dv.d_q, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.i_p)){
+    mpz_set_str(dv.i_p, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.i_q)){
+    mpz_set_str(dv.i_q, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.c)){
-      abort();
-    }
+    mpz_set_str(dv.c, num, 16);
+    num = strtok(NULL, "\n");
+
     rsaDecrypt(dv);
   }
 
@@ -168,8 +252,7 @@ void stage2() {
   mpz_clear(dv.c);
 }
 
-// TODO change "randomness"
-void elGamalEncrypt(ElGamalEncryptionVariables ev){
+void elGamalEncrypt(ElGamalEncryptionVariables ev) {
   mpz_t c1;
   mpz_t c2;
   mpz_t r;
@@ -193,35 +276,33 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   mpz_init(rho);
 
   mpz_set_ui(b, 1ul);
-  mpz_mul_2exp (b, b, mp_bits_per_limb);
+  mpz_mul_2exp(b, b, mp_bits_per_limb);
 
-  // start random
   unsigned int size = 128;
   unsigned char seed[size];
   unsigned char random[size];
-  int feedback = getSeed( size, seed );
-  if ( feedback != RDRAND_SUCCESS )
-    fprintf( stderr, "Could not generate sufficiently random seed!\n");
-  RAND_seed( seed, size );
+  int feedback = getSeed(size, seed);
+  if (feedback != RDRAND_SUCCESS)
+    fprintf(stderr, "Could not generate sufficiently random seed!\n");
+  RAND_seed(seed, size);
   feedback = RAND_status();
-  if ( feedback != 1 )
-    fprintf(stderr, "Not enough random data in openSSL random library\n" );
-
+  if (feedback != 1)
+    fprintf(stderr, "Not enough random data in openSSL random library\n");
   do {
-    feedback = RAND_bytes( random, size );
-    if ( feedback != 1 ) {
-      fprintf(stderr, "PRNG not random enough.\n" );
+    feedback = RAND_bytes(random, size);
+    if (feedback != 1) {
+      fprintf(stderr, "PRNG not random enough.\n");
     }
-    for ( int i = 0; i < size; i = i + 8 ) {
+    for (int i = 0; i < size; i = i + 8) {
       unsigned long temp = 0;
-      for (int j = 0; j<8; j++){
+      for (int j = 0; j < 8; j++) {
         temp = temp << 8;
         temp = temp | random[i + j];
       }
-      mpz_mul_2exp (r, r, 64ul); // Left shift to make space for more random data
+      mpz_mul_2exp(r, r, 64ul); // Left shift to make space for more random data
       mpz_add_ui(r, r, temp); // Add random data to number
     }
-  } while ( mpz_cmp( ev.p, r ) > 0  && mpz_cmp_ui( r, 1 ) >= 0 );
+  } while (mpz_cmp(ev.p, r) > 0 && mpz_cmp_ui(r, 1) >= 0);
 
   mpz_mont_rho_sq(rho, ev.p);
   mpz_mont_omega(omega, ev.p, b);
@@ -235,8 +316,8 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   mpz_mont_mul(c1_m, c2_m, m_m, ev.p, omega); // CAUTION: Resuing c1_m as a temp var
   mpz_mont_mul(c2, c1_m, one, ev.p, omega); // CAUTION: Resuing c1_m as a temp var
 
-  gmp_printf ("%ZX\n", c1);
-  gmp_printf ("%ZX\n", c2);
+  gmp_printf("%ZX\n", c1);
+  gmp_printf("%ZX\n", c2);
 
   mpz_clear(r);
   mpz_clear(c1);
@@ -271,22 +352,61 @@ void stage3() {
   mpz_init(ev.h);
   mpz_init(ev.m);
 
-  for (int i = 0; i < 10; i++){
-    if(1 != gmp_scanf("%ZX", ev.p)){
+  char buffer[1024];
+  size_t contentSize = 1;
+  char * content = malloc(sizeof(char) * 1024);
+  if (content == NULL) {
+    fprintf(stderr, "Failed to allocated memory.\n");
+    exit(1);
+  }
+  content[0] = '\0';
+  while (fgets(buffer, 1024, stdin)) {
+    contentSize += strlen(buffer);
+    content = realloc(content, contentSize);
+    if (content == NULL) {
+      fprintf(stderr, "Failed to allocated memory.\n");
+      free(content);
+      exit(1);
+    }
+    strcat(content, buffer);
+  }
+
+  if (ferror(stdin)) {
+    free(content);
+    fprintf(stderr, "Error reading stdin.\n");
+    exit(1);
+  }
+
+  char * num;
+  num = strtok(content, "\n");
+  while (num != NULL) {
+    mpz_set_str(ev.p, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", ev.q)){
+    mpz_set_str(ev.q, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", ev.g)){
+    mpz_set_str(ev.g, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", ev.h)){
+    mpz_set_str(ev.h, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", ev.m)){
-      abort();
-    }
+    mpz_set_str(ev.m, num, 16);
+    num = strtok(NULL, "\n");
+
     elGamalEncrypt(ev);
   }
 
@@ -297,7 +417,7 @@ void stage3() {
   mpz_clear(ev.m);
 }
 
-void elGamalDecrypt(ElGamalDecryptionVariables dv){
+void elGamalDecrypt(ElGamalDecryptionVariables dv) {
   mpz_t m, omega, rho, b, c1_m, c2_m, e, m_m, temp, one;
   mpz_init(m);
   mpz_init(omega);
@@ -311,7 +431,7 @@ void elGamalDecrypt(ElGamalDecryptionVariables dv){
   mpz_init(b);
   mpz_set_ui(one, 1ul);
   mpz_set_ui(b, 1ul);
-  mpz_mul_2exp (b, b, mp_bits_per_limb);
+  mpz_mul_2exp(b, b, mp_bits_per_limb);
 
   mpz_mont_rho_sq(rho, dv.p);
   mpz_mont_omega(omega, dv.p, b);
@@ -326,7 +446,7 @@ void elGamalDecrypt(ElGamalDecryptionVariables dv){
   mpz_mont_mul(m_m, temp, c2_m, dv.p, omega);
   mpz_mont_mul(m, m_m, one, dv.p, omega);
 
-  gmp_printf ("%ZX\n", m);
+  gmp_printf("%ZX\n", m);
   mpz_clear(m);
   mpz_clear(omega);
   mpz_clear(rho);
@@ -338,7 +458,6 @@ void elGamalDecrypt(ElGamalDecryptionVariables dv){
   mpz_clear(one);
   mpz_clear(b);
 }
-
 
 /*
 Perform stage 4:
@@ -358,25 +477,67 @@ void stage4() {
   mpz_init(dv.c1);
   mpz_init(dv.c2);
 
-  for (int i = 0; i < 10; i++){
-    if(1 != gmp_scanf("%ZX", dv.p)){
+  char buffer[1024];
+  size_t contentSize = 1;
+  char * content = malloc(sizeof(char) * 1024);
+  if (content == NULL) {
+    fprintf(stderr, "Failed to allocated memory.\n");
+    exit(1);
+  }
+  content[0] = '\0';
+  while (fgets(buffer, 1024, stdin)) {
+    contentSize += strlen(buffer);
+    content = realloc(content, contentSize);
+    if (content == NULL) {
+      fprintf(stderr, "Failed to allocated memory.\n");
+      free(content);
+      exit(1);
+    }
+    strcat(content, buffer);
+  }
+
+  if (ferror(stdin)) {
+    free(content);
+    fprintf(stderr, "Error reading stdin.\n");
+    exit(1);
+  }
+
+  char * num;
+  num = strtok(content, "\n");
+  while (num != NULL) {
+    mpz_set_str(dv.p, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.q)){
+    mpz_set_str(dv.q, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.g)){
+    mpz_set_str(dv.g, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.x)){
+    mpz_set_str(dv.x, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.c1)){
+    mpz_set_str(dv.c1, num, 16);
+    num = strtok(NULL, "\n");
+
+    if (num == NULL) {
       abort();
     }
-    if(1 != gmp_scanf("%ZX", dv.c2)){
-      abort();
-    }
+    mpz_set_str(dv.c2, num, 16);
+    num = strtok(NULL, "\n");
+
     elGamalDecrypt(dv);
   }
 
@@ -393,24 +554,20 @@ The main function acts as a driver for the assignment by simply invoking
 the correct function for the requested stage.
 */
 
-int main( int argc, char* argv[] ) {
-  if( 2 != argc ) { // TODO Remove this upto abort
+int main(int argc, char * argv[]) {
+  if (2 != argc) {
     abort();
   }
 
-  if     ( !strcmp( argv[ 1 ], "stage1" ) ) {
+  if (!strcmp(argv[1], "stage1")) {
     stage1();
-  }
-  else if( !strcmp( argv[ 1 ], "stage2" ) ) {
+  } else if (!strcmp(argv[1], "stage2")) {
     stage2();
-  }
-  else if( !strcmp( argv[ 1 ], "stage3" ) ) {
+  } else if (!strcmp(argv[1], "stage3")) {
     stage3();
-  }
-  else if( !strcmp( argv[ 1 ], "stage4" ) ) {
+  } else if (!strcmp(argv[1], "stage4")) {
     stage4();
-  }
-  else {
+  } else {
     abort();
   }
 
