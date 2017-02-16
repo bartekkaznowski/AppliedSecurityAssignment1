@@ -1,5 +1,12 @@
 #include "modmul.h"
 #include "gmp_ext.h"
+#include <openssl/rand.h>
+#include "rdrand.h"
+
+
+int getSeed ( unsigned int bytes, unsigned char *randomBinStr ) {
+  return rdrand_get_bytes( bytes, randomBinStr );
+}
 
 void rsaEncrypt(RSAEncryptionVariables ev){
   mpz_t c;
@@ -187,18 +194,34 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
 
   mpz_set_ui(b, 1ul);
   mpz_mul_2exp (b, b, mp_bits_per_limb);
+
   // start random
-  unsigned long int seed = 123456;
+  unsigned int size = 128;
+  unsigned char seed[size];
+  unsigned char random[size];
+  int feedback = getSeed( size, seed );
+  if ( feedback != RDRAND_SUCCESS )
+    fprintf( stderr, "Could not generate sufficiently random seed!\n");
+  RAND_seed( seed, size );
+  feedback = RAND_status();
+  if ( feedback != 1 )
+    fprintf(stderr, "Not enough random data in openSSL random library\n" );
 
-  gmp_randstate_t r_state;
-
-  gmp_randinit_default (r_state);
-  gmp_randseed_ui(r_state, seed);
-
-  mpz_urandomm(r,r_state, ev.q);
-
-  mpz_set_ui(r, 1ul);
-  //end random
+  do {
+    feedback = RAND_bytes( random, size );
+    if ( feedback != 1 ) {
+      fprintf(stderr, "PRNG not random enough.\n" );
+    }
+    for ( int i = 0; i < size; i = i + 8 ) {
+      unsigned long temp = 0;
+      for (int j = 0; j<8; j++){
+        temp = temp << 8;
+        temp = temp | random[i + j];
+      }
+      mpz_mul_2exp (r, r, 64ul); // Left shift to make space for more random data
+      mpz_add_ui(r, r, temp); // Add random data to number
+    }
+  } while ( mpz_cmp( ev.p, r ) > 0  && mpz_cmp_ui( r, 1 ) >= 0 );
 
   mpz_mont_rho_sq(rho, ev.p);
   mpz_mont_omega(omega, ev.p, b);
@@ -215,7 +238,6 @@ void elGamalEncrypt(ElGamalEncryptionVariables ev){
   gmp_printf ("%ZX\n", c1);
   gmp_printf ("%ZX\n", c2);
 
-  gmp_randclear(r_state);
   mpz_clear(r);
   mpz_clear(c1);
   mpz_clear(c2);
